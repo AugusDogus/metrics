@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+// Sheet metadata schema (from getAllSheets)
+export const sheetMetadataSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  rowCount: z.number(),
+});
+
 // Sheet row schema from Google Sheets
 export const sheetRowSchema = z.object({
   Date: z.string(),
@@ -24,7 +31,17 @@ export const sheetRowSchema = z.object({
   "Mobile Speed Index": z.union([z.string(), z.number()]),
 });
 
-// Processed metrics for charts - separating desktop and mobile
+// Helper function to convert string/number to number safely
+function toNumber(value: string | number | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+// Chart data point for recharts
 export const chartDataPointSchema = z.object({
   date: z.string(),
   // Desktop metrics
@@ -162,6 +179,7 @@ export type MetricId = (typeof AVAILABLE_METRICS)[number]["id"];
 export type MetricType = "lighthouse" | "webvital";
 
 // Export types
+export type SheetMetadata = z.infer<typeof sheetMetadataSchema>;
 export type SheetRow = z.infer<typeof sheetRowSchema>;
 export type ChartDataPoint = z.infer<typeof chartDataPointSchema>;
 export type LatestMetrics = z.infer<typeof latestMetricsSchema>;

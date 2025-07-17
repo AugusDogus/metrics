@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 import {
   filterDataByDateRange,
@@ -13,18 +14,20 @@ import {
   AVAILABLE_METRICS,
   DEFAULT_METRICS,
   type MetricId,
+  type SheetMetadata,
   type UrlMetrics,
 } from "~/lib/schemas";
 
 interface MetricsDashboardProps {
-  urlMetrics: UrlMetrics[];
+  sheets: SheetMetadata[];
+  selectedSheetData: UrlMetrics;
 }
 
-export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
-  const [selectedUrl, setSelectedUrl] = useQueryState("url", {
-    defaultValue: urlMetrics[0]?.name ?? "",
-    shallow: false,
-  });
+export function MetricsDashboard({
+  sheets,
+  selectedSheetData,
+}: MetricsDashboardProps) {
+  const router = useRouter();
 
   const [selectedMetrics] = useQueryState("metrics", {
     defaultValue: DEFAULT_METRICS.join(","),
@@ -36,7 +39,7 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
     shallow: false,
   });
 
-  if (urlMetrics.length === 0) {
+  if (sheets.length === 0) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
@@ -57,6 +60,17 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
   const selectedMetricConfigs = AVAILABLE_METRICS.filter((metric) =>
     selectedMetricIds.includes(metric.id),
   );
+
+  const handleTabChange = (sheetTitle: string) => {
+    // Encode the sheet title as base64 for the URL
+    const encodedTitle = btoa(sheetTitle);
+
+    // Get current search params to preserve other filters
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // Navigate to the new URL with the encoded sheet title as the path
+    router.push(`/${encodedTitle}?${searchParams.toString()}`);
+  };
 
   const renderMetricCard = (
     metric: (typeof AVAILABLE_METRICS)[number],
@@ -114,40 +128,41 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
   return (
     <div className="space-y-6">
       <Tabs
-        value={selectedUrl}
-        onValueChange={setSelectedUrl}
+        value={selectedSheetData.name}
+        onValueChange={handleTabChange}
         className="w-full"
       >
         <TabsList
           className="grid w-full"
           style={{
-            gridTemplateColumns: `repeat(${urlMetrics.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${sheets.length}, minmax(0, 1fr))`,
           }}
         >
-          {urlMetrics.map((urlData) => (
+          {sheets.map((sheet) => (
             <TabsTrigger
-              key={urlData.name}
-              value={urlData.name}
+              key={sheet.title}
+              value={sheet.title}
               className="text-xs sm:text-sm"
             >
-              {urlData.name}
+              {sheet.title}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {urlMetrics.map((urlData) => (
-          <TabsContent
-            key={urlData.name}
-            value={urlData.name}
-            className="space-y-6"
-          >
+        {/* Only render the selected tab content since we only have data for one sheet */}
+        <TabsContent value={selectedSheetData.name} className="space-y-6">
+          <div className="space-y-6">
             {/* URL Header */}
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">{urlData.name}</h2>
-              <p className="text-muted-foreground text-sm">{urlData.url}</p>
+              <h2 className="text-2xl font-bold">{selectedSheetData.name}</h2>
+              <p className="text-muted-foreground text-sm">
+                {selectedSheetData.url}
+              </p>
               <div className="text-muted-foreground text-xs">
                 Last updated:{" "}
-                {new Date(urlData.latestMetrics.timestamp).toLocaleString()}
+                {new Date(
+                  selectedSheetData.latestMetrics.timestamp,
+                ).toLocaleString()}
               </div>
             </div>
 
@@ -167,17 +182,17 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
             )}
 
             {/* All Selected Metrics */}
-            {selectedMetricConfigs.length > 0 && (
+            {selectedMetricIds.length > 0 && (
               <div className="space-y-6">
                 {selectedMetricConfigs.map((metric) => (
                   <div key={metric.id} className="w-full">
-                    {renderMetricCard(metric, urlData)}
+                    {renderMetricCard(metric, selectedSheetData)}
                   </div>
                 ))}
               </div>
             )}
-          </TabsContent>
-        ))}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
