@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LatestPost } from "~/app/_components/post";
+import { ChartAreaInteractive } from "~/components/example-chart";
 import { api, HydrateClient } from "~/trpc/server";
 
 export default async function Home() {
@@ -47,6 +48,7 @@ export default async function Home() {
           </div>
 
           <LatestPost />
+          <ChartAreaInteractive />
         </div>
       </main>
     </HydrateClient>

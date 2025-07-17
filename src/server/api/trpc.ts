@@ -26,7 +26,6 @@ import { doc } from "~/server/google/client";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  void doc.loadInfo();
   return {
     db,
     doc,

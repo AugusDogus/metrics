@@ -28,6 +28,7 @@ export const postRouter = createTRPCRouter({
     return post ?? null;
   }),
   getSheet: publicProcedure.query(async ({ ctx }) => {
+    await ctx.doc.loadInfo();
     const sheet = ctx.doc.title;
     return sheet ?? null;
   }),
