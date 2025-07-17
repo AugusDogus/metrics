@@ -29,14 +29,20 @@ async function MetricsContent({ sheetId }: { sheetId: string }) {
   // Decode the sheet title from the URL
   let decodedSheetTitle: string;
   try {
-    decodedSheetTitle = atob(sheetId);
-  } catch (error) {
-    console.warn("Failed to decode sheet ID:", error);
+    // URL decode first to handle encoded padding characters (%3D -> =)
+    const urlDecodedSheetId = decodeURIComponent(sheetId);
+
+    // Then base64 decode
+    decodedSheetTitle = Buffer.from(urlDecodedSheetId, "base64").toString(
+      "utf-8",
+    );
+  } catch {
     notFound();
   }
 
   // Verify the sheet exists
   const sheet = sheets.find((s) => s.title === decodedSheetTitle);
+
   if (!sheet) {
     notFound();
   }
