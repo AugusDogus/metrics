@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { CACHE_KEYS, CACHE_TTL, redis } from "~/lib/redis";
 import {
   sheetRowSchema,
   type ChartDataPoint,
+  type SheetMetadata,
   type UrlMetrics,
 } from "~/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -9,19 +11,21 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // Helper function to add delay between API calls
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Type for errors that might have HTTP status codes
-interface ApiError extends Error {
+// Type for API errors
+interface ApiError {
   response?: {
     status: number;
   };
 }
 
-// Helper function to convert string/number to number, handling "N/A" values
-function toNumber(value: string | number): number {
+// Helper function to convert string/number to number safely
+function toNumber(value: string | number | undefined): number {
   if (typeof value === "number") return value;
-  if (value === "N/A" || value === "") return 0;
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? 0 : parsed;
+  if (typeof value === "string") {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 // Helper function to parse date from Google Sheets format
@@ -120,14 +124,33 @@ export const metricsRouter = createTRPCRouter({
   // Get all sheets (URLs) available - skip the first sheet (dashboard)
   getAllSheets: publicProcedure.query(async ({ ctx }) => {
     try {
+      // Try to get from cache first
+      const cached = await redis.get<SheetMetadata[]>(
+        CACHE_KEYS.SHEETS_METADATA,
+      );
+      if (cached) {
+        console.log("Returning cached sheet metadata");
+        return cached;
+      }
+
+      console.log("Fetching fresh sheet metadata from Google Sheets");
       await ctx.doc.loadInfo();
 
       // Skip the first sheet as it's the dashboard
-      return ctx.doc.sheetsByIndex.slice(1).map((sheet) => ({
+      const sheets = ctx.doc.sheetsByIndex.slice(1).map((sheet) => ({
         id: sheet.sheetId,
         title: sheet.title,
         rowCount: sheet.rowCount,
       }));
+
+      // Cache the result
+      await redis.setex(
+        CACHE_KEYS.SHEETS_METADATA,
+        CACHE_TTL.SHEETS_METADATA,
+        sheets,
+      );
+
+      return sheets;
     } catch (error: unknown) {
       console.error("Error fetching sheets:", error);
       const apiError = error as ApiError;
@@ -145,6 +168,15 @@ export const metricsRouter = createTRPCRouter({
     .input(z.object({ sheetTitle: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
+        // Try to get from cache first
+        const cacheKey = CACHE_KEYS.SHEET_DATA(input.sheetTitle);
+        const cached = await redis.get<UrlMetrics>(cacheKey);
+        if (cached) {
+          console.log(`Returning cached data for sheet: ${input.sheetTitle}`);
+          return cached;
+        }
+
+        console.log(`Fetching fresh data for sheet: ${input.sheetTitle}`);
         await ctx.doc.loadInfo();
 
         const sheet = ctx.doc.sheetsByTitle[input.sheetTitle];
@@ -164,7 +196,7 @@ export const metricsRouter = createTRPCRouter({
           ? (rows[0]?.get("Website") as string)
           : input.sheetTitle;
 
-        return {
+        const result: UrlMetrics = {
           url,
           name: input.sheetTitle,
           data,
@@ -196,7 +228,12 @@ export const metricsRouter = createTRPCRouter({
               speedIndex: latestData.mobileSpeedIndex,
             },
           },
-        } satisfies UrlMetrics;
+        };
+
+        // Cache the result
+        await redis.setex(cacheKey, CACHE_TTL.SHEET_DATA, result);
+
+        return result;
       } catch (error: unknown) {
         console.error(
           `Error fetching metrics for sheet ${input.sheetTitle}:`,
@@ -213,6 +250,7 @@ export const metricsRouter = createTRPCRouter({
     }),
 
   // Get all metrics for all sheets with rate limiting - skip the first sheet (dashboard)
+  // This endpoint is kept for backward compatibility but not recommended for new usage
   getAllMetrics: publicProcedure.query(async ({ ctx }) => {
     try {
       await ctx.doc.loadInfo();

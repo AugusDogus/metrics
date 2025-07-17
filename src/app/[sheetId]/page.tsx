@@ -97,15 +97,5 @@ export default async function SheetPage({ params }: SheetPageProps) {
   );
 }
 
-// Generate static params for all sheets if needed
-export async function generateStaticParams() {
-  try {
-    const sheets = await api.metrics.getAllSheets();
-    return sheets.map((sheet) => ({
-      sheetId: btoa(sheet.title),
-    }));
-  } catch (error) {
-    console.warn("Failed to generate static params:", error);
-    return [];
-  }
-}
+// Note: generateStaticParams removed to avoid build-time context issues
+// Dynamic routes will be handled at request time instead
