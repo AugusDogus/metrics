@@ -1,60 +1,59 @@
-import Link from "next/link";
-
-import { LatestPost } from "~/app/_components/post";
-import { ChartAreaInteractive } from "~/components/example-chart";
+import { Suspense } from "react";
+import { MetricsDashboard } from "~/components/metrics-dashboard";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { api, HydrateClient } from "~/trpc/server";
 
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
+function LoadingState() {
+  return (
+    <div className="flex min-h-[400px] items-center justify-center">
+      <div className="space-y-2 text-center">
+        <div className="border-foreground mx-auto h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground text-sm">Loading metrics data...</p>
+      </div>
+    </div>
+  );
+}
 
-  void api.post.getLatest.prefetch();
-  void api.post.getSheet.prefetch();
+async function MetricsContent() {
+  const metricsData = await api.metrics.getAllMetrics();
+  return <MetricsDashboard urlMetrics={metricsData} />;
+}
+
+export default function Home() {
+  void api.metrics.getAllMetrics.prefetch();
 
   return (
     <HydrateClient>
-      <div className="absolute top-5 right-5">
-        <ThemeToggle />
-      </div>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
+      <div className="bg-background min-h-screen">
+        {/* Header */}
+        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+          <div className="container mx-auto flex h-14 items-center justify-between px-4">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-lg font-semibold">Lighthouse Metrics</h1>
+            </div>
+            <ThemeToggle />
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
-          </div>
+        </header>
 
-          <LatestPost />
-          <ChartAreaInteractive />
-        </div>
-      </main>
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Performance Dashboard
+              </h1>
+              <p className="text-muted-foreground">
+                Monitor your website&apos;s performance metrics from Google
+                Lighthouse.
+              </p>
+            </div>
+
+            <Suspense fallback={<LoadingState />}>
+              <MetricsContent />
+            </Suspense>
+          </div>
+        </main>
+      </div>
     </HydrateClient>
   );
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -281,7 +280,7 @@ function ChartLegendContent({
       )}
     >
       {payload.map((item) => {
-        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const key = `${nameKey ?? (item.dataKey as string) ?? "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
         return (
