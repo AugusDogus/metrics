@@ -50,9 +50,7 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
     if (metric.type === "lighthouse") {
       return (
         <Card key={metric.id}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{metric.label}</CardTitle>
-          </CardHeader>
+          
           <CardContent>
             <MetricsChart
               data={filteredData}
@@ -74,9 +72,7 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
 
       return (
         <Card key={metric.id}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{metric.label}</CardTitle>
-          </CardHeader>
+        
           <CardContent>
             <WebVitalsChart
               data={filteredData}
