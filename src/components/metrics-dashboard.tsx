@@ -95,7 +95,6 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
       {/* URL Header */}
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">{selectedSheetData.name}</h2>
-        <p className="text-muted-foreground text-sm">{selectedSheetData.url}</p>
         <div className="text-muted-foreground text-xs">
           Last updated:{" "}
           {new Date(selectedSheetData.latestMetrics.timestamp).toLocaleString()}
