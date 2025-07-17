@@ -1,6 +1,10 @@
 "use client";
 
 import { useQueryState } from "nuqs";
+import {
+  filterDataByDateRange,
+  type DateRange,
+} from "~/components/date-range-selector";
 import { MetricsChart } from "~/components/metrics-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -24,6 +28,11 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
 
   const [selectedMetrics] = useQueryState("metrics", {
     defaultValue: DEFAULT_METRICS.join(","),
+    shallow: false,
+  });
+
+  const [dateRange] = useQueryState("range", {
+    defaultValue: "90d" as DateRange,
     shallow: false,
   });
 
@@ -60,6 +69,12 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
     metric: (typeof AVAILABLE_METRICS)[number],
     urlData: UrlMetrics,
   ) => {
+    // Filter the data based on the selected date range
+    const filteredData = filterDataByDateRange(
+      urlData.data,
+      dateRange as DateRange,
+    );
+
     if (metric.type === "lighthouse") {
       // Map metric key to MetricsChart metric type
       const chartMetric =
@@ -81,7 +96,7 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
           </CardHeader>
           <CardContent>
             <MetricsChart
-              data={urlData.data}
+              data={filteredData}
               metric={chartMetric}
               title={metric.label}
             />
@@ -117,7 +132,7 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
           </CardHeader>
           <CardContent>
             <WebVitalsChart
-              data={urlData.data}
+              data={filteredData}
               metric={chartMetric}
               title={metric.label}
               formatValue={formatValue}

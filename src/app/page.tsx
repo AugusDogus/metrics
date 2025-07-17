@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { DateRangeSelector } from "~/components/date-range-selector";
 import { MetricsDashboard } from "~/components/metrics-dashboard";
 import { MetricsSelector } from "~/components/metrics-selector";
 import { ThemeToggle } from "~/components/theme-toggle";
@@ -33,6 +34,7 @@ export default function Home() {
               <h1 className="text-lg font-semibold">Lighthouse Metrics</h1>
             </div>
             <div className="flex items-center space-x-2">
+              <DateRangeSelector />
               <MetricsSelector />
               <ThemeToggle />
             </div>
