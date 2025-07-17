@@ -108,7 +108,11 @@ export function WebVitalsChart({
               <ChartTooltipContent
                 indicator="dot"
                 formatter={(value, name, item) => {
-                  const indicatorColor = item.payload.fill ?? item.color;
+                  const indicatorColor =
+                    (item as { payload?: { fill?: string }; color?: string })
+                      ?.payload?.fill ??
+                    (item as { color?: string })?.color ??
+                    "var(--chart-1)";
                   const label = name === desktopKey ? "Desktop" : "Mobile";
                   const formattedValue = formatter(value as number);
 

@@ -83,7 +83,11 @@ export function MetricsChart({ data, metric, title }: MetricsChartProps) {
               <ChartTooltipContent
                 indicator="dot"
                 formatter={(value, name, item) => {
-                  const indicatorColor = item.payload.fill ?? item.color;
+                  const indicatorColor =
+                    (item as { payload?: { fill?: string }; color?: string })
+                      ?.payload?.fill ??
+                    (item as { color?: string })?.color ??
+                    "var(--chart-1)";
                   const label = name === desktopKey ? "Desktop" : "Mobile";
 
                   return (
