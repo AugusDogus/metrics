@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { DateRangeSelector } from "~/components/date-range-selector";
 import { MetricsSelector } from "~/components/metrics-selector";
 import { ThemeToggle } from "~/components/theme-toggle";
@@ -50,7 +51,7 @@ function getTabDisplayName(url: string): string {
   }
 }
 
-export function Navbar() {
+function NavbarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: sheets = [] } = api.metrics.getAllSheets.useQuery();
@@ -132,5 +133,28 @@ export function Navbar() {
         </div>
       </header>
     </TooltipProvider>
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense
+      fallback={
+        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+          <div className="container mx-auto px-4">
+            <div className="flex h-14 items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <h1 className="text-lg font-semibold">Lighthouse Metrics</h1>
+              </div>
+              <div className="flex items-center space-x-2">
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        </header>
+      }
+    >
+      <NavbarContent />
+    </Suspense>
   );
 }
