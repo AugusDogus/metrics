@@ -107,10 +107,30 @@ export function WebVitalsChart({
             content={
               <ChartTooltipContent
                 indicator="dot"
-                formatter={(value, name) => [
-                  formatter(value as number),
-                  name === desktopKey ? "Desktop" : "Mobile",
-                ]}
+                formatter={(value, name, item) => {
+                  const indicatorColor = item.payload.fill ?? item.color;
+                  const label = name === desktopKey ? "Desktop" : "Mobile";
+                  const formattedValue = formatter(value as number);
+
+                  return (
+                    <>
+                      <div
+                        className="h-2.5 w-2.5 shrink-0 rounded-[2px] border bg-[var(--color-bg)]"
+                        style={
+                          {
+                            "--color-bg": indicatorColor,
+                          } as React.CSSProperties
+                        }
+                      />
+                      <div className="flex flex-1 items-center justify-between leading-none">
+                        <span className="text-muted-foreground">{label}</span>
+                        <span className="text-foreground font-mono font-medium tabular-nums">
+                          {formattedValue}
+                        </span>
+                      </div>
+                    </>
+                  );
+                }}
               />
             }
           />
