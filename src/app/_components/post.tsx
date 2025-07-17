@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 
 export function LatestPost() {
   const [latestPost] = api.post.getLatest.useSuspenseQuery();
+  const [sheet] = api.post.getSheet.useSuspenseQuery();
 
   const utils = api.useUtils();
   const [name, setName] = useState("");
@@ -23,6 +24,7 @@ export function LatestPost() {
       ) : (
         <p>You have no posts yet.</p>
       )}
+      {sheet ? <p>Sheet: {sheet}</p> : <p>No sheet</p>}
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -11,6 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "~/server/db";
+import { doc } from "~/server/google/client";
 
 /**
  * 1. CONTEXT
@@ -25,8 +26,10 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  void doc.loadInfo();
   return {
     db,
+    doc,
     ...opts,
   };
 };
