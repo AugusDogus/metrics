@@ -85,6 +85,152 @@ export const urlMetricsSchema = z.object({
   latestMetrics: latestMetricsSchema,
 });
 
+// Metrics configuration for filtering
+export const AVAILABLE_METRICS = [
+  // Lighthouse Scores
+  {
+    id: "desktop-performance",
+    label: "Desktop Performance",
+    type: "lighthouse" as const,
+    key: "desktopPerformance" as const,
+    unit: "",
+  },
+  {
+    id: "mobile-performance",
+    label: "Mobile Performance",
+    type: "lighthouse" as const,
+    key: "mobilePerformance" as const,
+    unit: "",
+  },
+  {
+    id: "desktop-accessibility",
+    label: "Desktop Accessibility",
+    type: "lighthouse" as const,
+    key: "desktopAccessibility" as const,
+    unit: "",
+  },
+  {
+    id: "mobile-accessibility",
+    label: "Mobile Accessibility",
+    type: "lighthouse" as const,
+    key: "mobileAccessibility" as const,
+    unit: "",
+  },
+  {
+    id: "desktop-best-practices",
+    label: "Desktop Best Practices",
+    type: "lighthouse" as const,
+    key: "desktopBestPractices" as const,
+    unit: "",
+  },
+  {
+    id: "mobile-best-practices",
+    label: "Mobile Best Practices",
+    type: "lighthouse" as const,
+    key: "mobileBestPractices" as const,
+    unit: "",
+  },
+  {
+    id: "desktop-seo",
+    label: "Desktop SEO",
+    type: "lighthouse" as const,
+    key: "desktopSeo" as const,
+    unit: "",
+  },
+  {
+    id: "mobile-seo",
+    label: "Mobile SEO",
+    type: "lighthouse" as const,
+    key: "mobileSeo" as const,
+    unit: "",
+  },
+
+  // Web Vitals
+  {
+    id: "desktop-fcp",
+    label: "Desktop FCP (s)",
+    type: "webvital" as const,
+    key: "desktopFcp" as const,
+    unit: "s",
+  },
+  {
+    id: "mobile-fcp",
+    label: "Mobile FCP (s)",
+    type: "webvital" as const,
+    key: "mobileFcp" as const,
+    unit: "s",
+  },
+  {
+    id: "desktop-lcp",
+    label: "Desktop LCP (s)",
+    type: "webvital" as const,
+    key: "desktopLcp" as const,
+    unit: "s",
+  },
+  {
+    id: "mobile-lcp",
+    label: "Mobile LCP (s)",
+    type: "webvital" as const,
+    key: "mobileLcp" as const,
+    unit: "s",
+  },
+  {
+    id: "desktop-tbt",
+    label: "Desktop TBT (ms)",
+    type: "webvital" as const,
+    key: "desktopTbt" as const,
+    unit: "ms",
+  },
+  {
+    id: "mobile-tbt",
+    label: "Mobile TBT (ms)",
+    type: "webvital" as const,
+    key: "mobileTbt" as const,
+    unit: "ms",
+  },
+  {
+    id: "desktop-cls",
+    label: "Desktop CLS",
+    type: "webvital" as const,
+    key: "desktopCls" as const,
+    unit: "",
+  },
+  {
+    id: "mobile-cls",
+    label: "Mobile CLS",
+    type: "webvital" as const,
+    key: "mobileCls" as const,
+    unit: "",
+  },
+  {
+    id: "desktop-speed-index",
+    label: "Desktop Speed (s)",
+    type: "webvital" as const,
+    key: "desktopSpeedIndex" as const,
+    unit: "s",
+  },
+  {
+    id: "mobile-speed-index",
+    label: "Mobile Speed (s)",
+    type: "webvital" as const,
+    key: "mobileSpeedIndex" as const,
+    unit: "s",
+  },
+] as const;
+
+// Default metrics to show
+export const DEFAULT_METRICS = [
+  "desktop-performance",
+  "mobile-performance",
+  "desktop-fcp",
+  "mobile-fcp",
+  "desktop-speed-index",
+  "mobile-speed-index",
+] as const;
+
+export type MetricId = (typeof AVAILABLE_METRICS)[number]["id"];
+export type MetricType = "lighthouse" | "webvital";
+
 // Export types
 export type SheetRow = z.infer<typeof sheetRowSchema>;
 export type ChartDataPoint = z.infer<typeof chartDataPointSchema>;

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { MetricsDashboard } from "~/components/metrics-dashboard";
+import { MetricsSelector } from "~/components/metrics-selector";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { api, HydrateClient } from "~/trpc/server";
 
@@ -31,7 +32,10 @@ export default function Home() {
             <div className="flex items-center space-x-2">
               <h1 className="text-lg font-semibold">Lighthouse Metrics</h1>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center space-x-2">
+              <MetricsSelector />
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
