@@ -6,7 +6,7 @@ import {
   type DateRange,
 } from "~/components/date-range-selector";
 import { MetricsChart } from "~/components/metrics-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { WebVitalsChart } from "~/components/web-vitals-chart";
 import {
   AVAILABLE_METRICS,
@@ -50,7 +50,6 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
     if (metric.type === "lighthouse") {
       return (
         <Card key={metric.id}>
-          
           <CardContent>
             <MetricsChart
               data={filteredData}
@@ -72,7 +71,6 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
 
       return (
         <Card key={metric.id}>
-        
           <CardContent>
             <WebVitalsChart
               data={filteredData}

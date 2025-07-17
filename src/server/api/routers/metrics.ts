@@ -203,6 +203,7 @@ export const metricsRouter = createTRPCRouter({
         }
 
         const latestData = data[data.length - 1]!;
+        const latestRowIndex = data.length - 1;
         const url = latestData
           ? (rows[0]?.get("Website") as string)
           : input.sheetTitle;
@@ -214,7 +215,7 @@ export const metricsRouter = createTRPCRouter({
           latestMetrics: {
             url,
             timestamp: parseSheetTimestamp(
-              rows[0]?.get("Date") as string | undefined,
+              rows[latestRowIndex]?.get("Date") as string | undefined,
             ).toISOString(),
             desktop: {
               performance: latestData.desktopPerformance,
@@ -290,6 +291,7 @@ export const metricsRouter = createTRPCRouter({
 
           if (data.length > 0) {
             const latestData = data[data.length - 1]!;
+            const latestRowIndex = data.length - 1;
             const url = (rows[0]?.get("Website") as string) || sheet.title;
 
             results.push({
@@ -299,7 +301,7 @@ export const metricsRouter = createTRPCRouter({
               latestMetrics: {
                 url,
                 timestamp: parseSheetTimestamp(
-                  rows[0]?.get("Date") as string | undefined,
+                  rows[latestRowIndex]?.get("Date") as string | undefined,
                 ).toISOString(),
                 desktop: {
                   performance: latestData.desktopPerformance,
