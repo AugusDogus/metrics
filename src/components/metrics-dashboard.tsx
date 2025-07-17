@@ -20,13 +20,19 @@ import {
 } from "~/lib/schemas";
 
 import "simplebar-react/dist/simplebar.min.css";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface MetricsDashboardProps {
   sheets: SheetMetadata[];
   selectedSheetData: UrlMetrics;
 }
 
-// Extract the last two path segments from a URL for tab display
+// Extract the last path segment from a URL for tab display
 function getTabDisplayName(url: string): string {
   try {
     // Handle URLs that might not have protocol
@@ -39,20 +45,20 @@ function getTabDisplayName(url: string): string {
       return "Home";
     }
 
-    // Get the last two segments (or just one if only one exists)
-    const lastTwoSegments = pathSegments.slice(-2);
-    return lastTwoSegments.join("/").replaceAll("/", " ").replaceAll("-", " ");
+    // Get the last segment and clean it up
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    return lastSegment ? lastSegment.replaceAll("-", " ") : "Home";
   } catch {
-    // Fallback: split by / and get last two segments
+    // Fallback: split by / and get last segment
     const segments = url.split("/").filter(Boolean);
 
     if (segments.length === 0) {
       return "Home";
     }
 
-    // Get the last two segments (or just one if only one exists)
-    const lastTwoSegments = segments.slice(-2);
-    return lastTwoSegments.join("/");
+    // Get the last segment and clean it up
+    const lastSegment = segments[segments.length - 1];
+    return lastSegment ? lastSegment.replaceAll("-", " ") : "Home";
   }
 }
 
@@ -159,77 +165,85 @@ export function MetricsDashboard({
   };
 
   return (
-    <div className="space-y-6">
-      <Tabs
-        value={selectedSheetData.name}
-        onValueChange={handleTabChange}
-        className="min-h-16 w-full"
-      >
-        <TabsList className="min-h-16 w-full">
-          <SimpleBar
-            forceVisible="x"
-            autoHide={false}
-            className="w-full overflow-x-auto pb-2"
-          >
-            <div className="mt-2 flex min-h-10 gap-1 pb-2">
-              {sheets.map((sheet) => (
-                <TabsTrigger
-                  key={sheet.title}
-                  value={sheet.title}
-                  className="text-xs whitespace-nowrap capitalize sm:text-sm"
-                >
-                  {getTabDisplayName(sheet.title)}
-                </TabsTrigger>
-              ))}
-            </div>
-          </SimpleBar>
-        </TabsList>
-
-        {/* Only render the selected tab content since we only have data for one sheet */}
-        <TabsContent value={selectedSheetData.name} className="space-y-6">
-          <div className="space-y-6">
-            {/* URL Header */}
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold">{selectedSheetData.name}</h2>
-              <p className="text-muted-foreground text-sm">
-                {selectedSheetData.url}
-              </p>
-              <div className="text-muted-foreground text-xs">
-                Last updated:{" "}
-                {new Date(
-                  selectedSheetData.latestMetrics.timestamp,
-                ).toLocaleString()}
-              </div>
-            </div>
-
-            {/* Show message if no metrics selected */}
-            {selectedMetricIds.length === 0 && (
-              <div className="flex min-h-[200px] items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-muted-foreground text-lg font-medium">
-                    No metrics selected
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Use the metrics selector in the navbar to choose which
-                    metrics to display.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* All Selected Metrics */}
-            {selectedMetricIds.length > 0 && (
-              <div className="space-y-6">
-                {selectedMetricConfigs.map((metric) => (
-                  <div key={metric.id} className="w-full">
-                    {renderMetricCard(metric, selectedSheetData)}
-                  </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <Tabs
+          value={selectedSheetData.name}
+          onValueChange={handleTabChange}
+          className="min-h-16 w-full"
+        >
+          <TabsList className="min-h-16 w-full">
+            <SimpleBar
+              forceVisible="x"
+              autoHide={false}
+              className="w-full overflow-x-auto pb-2"
+            >
+              <div className="mt-2 flex min-h-10 gap-1 pb-2">
+                {sheets.map((sheet) => (
+                  <Tooltip key={sheet.title}>
+                    <TooltipTrigger className="flex-1">
+                      <TabsTrigger
+                        value={sheet.title}
+                        className="w-full text-xs whitespace-nowrap capitalize sm:text-sm"
+                      >
+                        {getTabDisplayName(sheet.title)}
+                      </TabsTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{sheet.title}</p>
+                    </TooltipContent>
+                  </Tooltip>
                 ))}
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+            </SimpleBar>
+          </TabsList>
+
+          {/* Only render the selected tab content since we only have data for one sheet */}
+          <TabsContent value={selectedSheetData.name} className="space-y-6">
+            <div className="space-y-6">
+              {/* URL Header */}
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold">{selectedSheetData.name}</h2>
+                <p className="text-muted-foreground text-sm">
+                  {selectedSheetData.url}
+                </p>
+                <div className="text-muted-foreground text-xs">
+                  Last updated:{" "}
+                  {new Date(
+                    selectedSheetData.latestMetrics.timestamp,
+                  ).toLocaleString()}
+                </div>
+              </div>
+
+              {/* Show message if no metrics selected */}
+              {selectedMetricIds.length === 0 && (
+                <div className="flex min-h-[200px] items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-muted-foreground text-lg font-medium">
+                      No metrics selected
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Use the metrics selector in the navbar to choose which
+                      metrics to display.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* All Selected Metrics */}
+              {selectedMetricIds.length > 0 && (
+                <div className="space-y-6">
+                  {selectedMetricConfigs.map((metric) => (
+                    <div key={metric.id} className="w-full">
+                      {renderMetricCard(metric, selectedSheetData)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </TooltipProvider>
   );
 }
