@@ -6,6 +6,16 @@ import {
 } from "~/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
+// Helper function to add delay between API calls
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Type for errors that might have HTTP status codes
+interface ApiError extends Error {
+  response?: {
+    status: number;
+  };
+}
+
 // Helper function to convert string/number to number, handling "N/A" values
 function toNumber(value: string | number): number {
   if (typeof value === "number") return value;
@@ -14,98 +24,93 @@ function toNumber(value: string | number): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Helper function to parse formatted time values (e.g., "1.2 s" -> 1200)
-function parseTimeValue(value: string | number): number {
-  if (typeof value === "number") return value;
-  if (value === "N/A" || value === "") return 0;
-
-  // Remove units and convert to ms
-  const cleaned = value.toString().replace(/[^\d.]/g, "");
-  const parsed = parseFloat(cleaned);
-  if (isNaN(parsed)) return 0;
-
-  // If value contains 's', convert to ms
-  if (value.includes("s")) return parsed * 1000;
-  return parsed;
-}
-
-// Helper function to parse date from the specific format used in sheets
+// Helper function to parse date from Google Sheets format
 function parseSheetDate(dateString: string | undefined): string {
-  if (!dateString) {
-    return new Date().toISOString().split("T")[0]!; // fallback to today
-  }
+  if (!dateString) return new Date().toISOString().split("T")[0]!;
 
   try {
-    // Format is like "12/25/2024, 14.30" - replace period with colon for proper parsing
+    // Handle Google Sheets date format like "12/25/2024, 14.30"
+    // Convert period to colon for time parsing
     const normalizedDate = dateString.replace(/(\d{2})\.(\d{2})$/, "$1:$2");
-    const parsedDate = new Date(normalizedDate);
+    const date = new Date(normalizedDate);
 
-    if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid date format: ${dateString}`);
-      return new Date().toISOString().split("T")[0]!; // fallback to today
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date format: ${dateString}, using current date`);
+      return new Date().toISOString().split("T")[0]!;
     }
 
-    return parsedDate.toISOString().split("T")[0]!;
+    return date.toISOString().split("T")[0]!;
   } catch (error) {
     console.warn(`Error parsing date: ${dateString}`, error);
-    return new Date().toISOString().split("T")[0]!; // fallback to today
+    return new Date().toISOString().split("T")[0]!;
   }
 }
 
 // Helper function to parse full timestamp
-function parseSheetTimestamp(dateString: string | undefined): string {
-  if (!dateString) {
-    return new Date().toISOString();
-  }
+function parseSheetTimestamp(dateString: string | undefined): Date {
+  if (!dateString) return new Date();
 
   try {
-    // Format is like "12/25/2024, 14.30" - replace period with colon for proper parsing
+    // Handle Google Sheets date format like "12/25/2024, 14.30"
+    // Convert period to colon for time parsing
     const normalizedDate = dateString.replace(/(\d{2})\.(\d{2})$/, "$1:$2");
-    const parsedDate = new Date(normalizedDate);
+    const date = new Date(normalizedDate);
 
-    if (isNaN(parsedDate.getTime())) {
-      console.warn(`Invalid timestamp format: ${dateString}`);
-      return new Date().toISOString();
+    if (isNaN(date.getTime())) {
+      console.warn(
+        `Invalid timestamp format: ${dateString}, using current time`,
+      );
+      return new Date();
     }
 
-    return parsedDate.toISOString();
+    return date;
   } catch (error) {
     console.warn(`Error parsing timestamp: ${dateString}`, error);
-    return new Date().toISOString();
+    return new Date();
   }
 }
 
-// Helper function to process sheet data into chart format
-function processSheetData(rows: unknown[]): ChartDataPoint[] {
-  return rows
+// Process raw sheet data into chart format
+function processSheetData(
+  rawData: Record<string, unknown>[],
+): ChartDataPoint[] {
+  return rawData
     .map((row) => {
-      const parsed = sheetRowSchema.safeParse(row);
-      if (!parsed.success) return null;
+      try {
+        const parsed = sheetRowSchema.safeParse(row);
+        if (!parsed.success) {
+          console.warn("Invalid row data:", parsed.error.issues);
+          return null;
+        }
 
-      const data = parsed.data;
-      return {
-        date: parseSheetDate(data.Date),
-        // Desktop metrics
-        desktopPerformance: toNumber(data["Desktop Performance Score"]),
-        desktopAccessibility: toNumber(data["Desktop Accessibility Score"]),
-        desktopBestPractices: toNumber(data["Desktop Best Practices Score"]),
-        desktopSeo: toNumber(data["Desktop SEO Score"]),
-        desktopFcp: parseTimeValue(data["Desktop First Contentful Paint"]),
-        desktopLcp: parseTimeValue(data["Desktop Largest Contentful Paint"]),
-        desktopTbt: parseTimeValue(data["Desktop Total Blocking Time"]),
-        desktopCls: toNumber(data["Desktop Cumulative Layout Shift"]),
-        desktopSpeedIndex: parseTimeValue(data["Desktop Speed Index"]),
-        // Mobile metrics
-        mobilePerformance: toNumber(data["Mobile Performance Score"]),
-        mobileAccessibility: toNumber(data["Mobile Accessibility Score"]),
-        mobileBestPractices: toNumber(data["Mobile Best Practices Score"]),
-        mobileSeo: toNumber(data["Mobile SEO Score"]),
-        mobileFcp: parseTimeValue(data["Mobile First Contentful Paint"]),
-        mobileLcp: parseTimeValue(data["Mobile Largest Contentful Paint"]),
-        mobileTbt: parseTimeValue(data["Mobile Total Blocking Time"]),
-        mobileCls: toNumber(data["Mobile Cumulative Layout Shift"]),
-        mobileSpeedIndex: parseTimeValue(data["Mobile Speed Index"]),
-      };
+        const data = parsed.data;
+        return {
+          date: parseSheetDate(data.Date),
+          // Desktop metrics
+          desktopPerformance: toNumber(data["Desktop Performance Score"]),
+          desktopAccessibility: toNumber(data["Desktop Accessibility Score"]),
+          desktopBestPractices: toNumber(data["Desktop Best Practices Score"]),
+          desktopSeo: toNumber(data["Desktop SEO Score"]),
+          desktopFcp: toNumber(data["Desktop First Contentful Paint"]),
+          desktopLcp: toNumber(data["Desktop Largest Contentful Paint"]),
+          desktopTbt: toNumber(data["Desktop Total Blocking Time"]),
+          desktopCls: toNumber(data["Desktop Cumulative Layout Shift"]),
+          desktopSpeedIndex: toNumber(data["Desktop Speed Index"]),
+          // Mobile metrics
+          mobilePerformance: toNumber(data["Mobile Performance Score"]),
+          mobileAccessibility: toNumber(data["Mobile Accessibility Score"]),
+          mobileBestPractices: toNumber(data["Mobile Best Practices Score"]),
+          mobileSeo: toNumber(data["Mobile SEO Score"]),
+          mobileFcp: toNumber(data["Mobile First Contentful Paint"]),
+          mobileLcp: toNumber(data["Mobile Largest Contentful Paint"]),
+          mobileTbt: toNumber(data["Mobile Total Blocking Time"]),
+          mobileCls: toNumber(data["Mobile Cumulative Layout Shift"]),
+          mobileSpeedIndex: toNumber(data["Mobile Speed Index"]),
+        };
+      } catch (error) {
+        console.error("Error processing row:", error);
+        return null;
+      }
     })
     .filter((item): item is ChartDataPoint => item !== null)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -114,129 +119,192 @@ function processSheetData(rows: unknown[]): ChartDataPoint[] {
 export const metricsRouter = createTRPCRouter({
   // Get all sheets (URLs) available - skip the first sheet (dashboard)
   getAllSheets: publicProcedure.query(async ({ ctx }) => {
-    await ctx.doc.loadInfo();
+    try {
+      await ctx.doc.loadInfo();
 
-    // Skip the first sheet as it's the dashboard
-    return ctx.doc.sheetsByIndex.slice(1).map((sheet) => ({
-      id: sheet.sheetId,
-      title: sheet.title,
-      rowCount: sheet.rowCount,
-    }));
+      // Skip the first sheet as it's the dashboard
+      return ctx.doc.sheetsByIndex.slice(1).map((sheet) => ({
+        id: sheet.sheetId,
+        title: sheet.title,
+        rowCount: sheet.rowCount,
+      }));
+    } catch (error: unknown) {
+      console.error("Error fetching sheets:", error);
+      const apiError = error as ApiError;
+      if (apiError?.response?.status === 429) {
+        throw new Error(
+          "Rate limit exceeded. Please wait a moment before trying again.",
+        );
+      }
+      throw error;
+    }
   }),
 
   // Get metrics for a specific sheet/URL
   getMetricsForSheet: publicProcedure
     .input(z.object({ sheetTitle: z.string() }))
     .query(async ({ ctx, input }) => {
-      await ctx.doc.loadInfo();
-
-      const sheet = ctx.doc.sheetsByTitle[input.sheetTitle];
-      if (!sheet) {
-        throw new Error(`Sheet with title "${input.sheetTitle}" not found`);
-      }
-
-      const rows = await sheet.getRows();
-      const data = processSheetData(rows.map((row) => row.toObject()));
-
-      if (data.length === 0) {
-        throw new Error("No valid data found in sheet");
-      }
-
-      const latestData = data[data.length - 1]!;
-      const url = latestData
-        ? (rows[0]?.get("Website") as string)
-        : input.sheetTitle;
-
-      return {
-        url,
-        name: input.sheetTitle,
-        data,
-        latestMetrics: {
-          url,
-          timestamp: parseSheetTimestamp(
-            rows[0]?.get("Date") as string | undefined,
-          ),
-          desktop: {
-            performance: latestData.desktopPerformance,
-            accessibility: latestData.desktopAccessibility,
-            bestPractices: latestData.desktopBestPractices,
-            seo: latestData.desktopSeo,
-            fcp: latestData.desktopFcp,
-            lcp: latestData.desktopLcp,
-            tbt: latestData.desktopTbt,
-            cls: latestData.desktopCls,
-            speedIndex: latestData.desktopSpeedIndex,
-          },
-          mobile: {
-            performance: latestData.mobilePerformance,
-            accessibility: latestData.mobileAccessibility,
-            bestPractices: latestData.mobileBestPractices,
-            seo: latestData.mobileSeo,
-            fcp: latestData.mobileFcp,
-            lcp: latestData.mobileLcp,
-            tbt: latestData.mobileTbt,
-            cls: latestData.mobileCls,
-            speedIndex: latestData.mobileSpeedIndex,
-          },
-        },
-      } satisfies UrlMetrics;
-    }),
-
-  // Get all metrics for all sheets - skip the first sheet (dashboard)
-  getAllMetrics: publicProcedure.query(async ({ ctx }) => {
-    await ctx.doc.loadInfo();
-
-    const results: UrlMetrics[] = [];
-
-    // Skip the first sheet as it's the dashboard
-    for (const sheet of ctx.doc.sheetsByIndex.slice(1)) {
       try {
+        await ctx.doc.loadInfo();
+
+        const sheet = ctx.doc.sheetsByTitle[input.sheetTitle];
+        if (!sheet) {
+          throw new Error(`Sheet with title "${input.sheetTitle}" not found`);
+        }
+
         const rows = await sheet.getRows();
         const data = processSheetData(rows.map((row) => row.toObject()));
 
-        if (data.length > 0) {
-          const latestData = data[data.length - 1]!;
-          const url = (rows[0]?.get("Website") as string) || sheet.title;
-
-          results.push({
-            url,
-            name: sheet.title,
-            data,
-            latestMetrics: {
-              url,
-              timestamp: parseSheetTimestamp(
-                rows[0]?.get("Date") as string | undefined,
-              ),
-              desktop: {
-                performance: latestData.desktopPerformance,
-                accessibility: latestData.desktopAccessibility,
-                bestPractices: latestData.desktopBestPractices,
-                seo: latestData.desktopSeo,
-                fcp: latestData.desktopFcp,
-                lcp: latestData.desktopLcp,
-                tbt: latestData.desktopTbt,
-                cls: latestData.desktopCls,
-                speedIndex: latestData.desktopSpeedIndex,
-              },
-              mobile: {
-                performance: latestData.mobilePerformance,
-                accessibility: latestData.mobileAccessibility,
-                bestPractices: latestData.mobileBestPractices,
-                seo: latestData.mobileSeo,
-                fcp: latestData.mobileFcp,
-                lcp: latestData.mobileLcp,
-                tbt: latestData.mobileTbt,
-                cls: latestData.mobileCls,
-                speedIndex: latestData.mobileSpeedIndex,
-              },
-            },
-          });
+        if (data.length === 0) {
+          throw new Error("No valid data found in sheet");
         }
-      } catch (error) {
-        console.error(`Error processing sheet ${sheet.title}:`, error);
-      }
-    }
 
-    return results;
+        const latestData = data[data.length - 1]!;
+        const url = latestData
+          ? (rows[0]?.get("Website") as string)
+          : input.sheetTitle;
+
+        return {
+          url,
+          name: input.sheetTitle,
+          data,
+          latestMetrics: {
+            url,
+            timestamp: parseSheetTimestamp(
+              rows[0]?.get("Date") as string | undefined,
+            ).toISOString(),
+            desktop: {
+              performance: latestData.desktopPerformance,
+              accessibility: latestData.desktopAccessibility,
+              bestPractices: latestData.desktopBestPractices,
+              seo: latestData.desktopSeo,
+              fcp: latestData.desktopFcp,
+              lcp: latestData.desktopLcp,
+              tbt: latestData.desktopTbt,
+              cls: latestData.desktopCls,
+              speedIndex: latestData.desktopSpeedIndex,
+            },
+            mobile: {
+              performance: latestData.mobilePerformance,
+              accessibility: latestData.mobileAccessibility,
+              bestPractices: latestData.mobileBestPractices,
+              seo: latestData.mobileSeo,
+              fcp: latestData.mobileFcp,
+              lcp: latestData.mobileLcp,
+              tbt: latestData.mobileTbt,
+              cls: latestData.mobileCls,
+              speedIndex: latestData.mobileSpeedIndex,
+            },
+          },
+        } satisfies UrlMetrics;
+      } catch (error: unknown) {
+        console.error(
+          `Error fetching metrics for sheet ${input.sheetTitle}:`,
+          error,
+        );
+        const apiError = error as ApiError;
+        if (apiError?.response?.status === 429) {
+          throw new Error(
+            "Rate limit exceeded. Please wait a moment before trying again.",
+          );
+        }
+        throw error;
+      }
+    }),
+
+  // Get all metrics for all sheets with rate limiting - skip the first sheet (dashboard)
+  getAllMetrics: publicProcedure.query(async ({ ctx }) => {
+    try {
+      await ctx.doc.loadInfo();
+
+      const results: UrlMetrics[] = [];
+      const sheets = ctx.doc.sheetsByIndex.slice(1); // Skip the first sheet as it's the dashboard
+
+      console.log(`Fetching data from ${sheets.length} sheets...`);
+
+      for (let i = 0; i < sheets.length; i++) {
+        const sheet = sheets[i]!;
+
+        try {
+          console.log(
+            `Processing sheet ${i + 1}/${sheets.length}: ${sheet.title}`,
+          );
+
+          // Add delay between requests to avoid rate limiting
+          if (i > 0) {
+            console.log("Adding delay to prevent rate limiting...");
+            await sleep(1000); // 1 second delay between sheets
+          }
+
+          const rows = await sheet.getRows();
+          const data = processSheetData(rows.map((row) => row.toObject()));
+
+          if (data.length > 0) {
+            const latestData = data[data.length - 1]!;
+            const url = (rows[0]?.get("Website") as string) || sheet.title;
+
+            results.push({
+              url,
+              name: sheet.title,
+              data,
+              latestMetrics: {
+                url,
+                timestamp: parseSheetTimestamp(
+                  rows[0]?.get("Date") as string | undefined,
+                ).toISOString(),
+                desktop: {
+                  performance: latestData.desktopPerformance,
+                  accessibility: latestData.desktopAccessibility,
+                  bestPractices: latestData.desktopBestPractices,
+                  seo: latestData.desktopSeo,
+                  fcp: latestData.desktopFcp,
+                  lcp: latestData.desktopLcp,
+                  tbt: latestData.desktopTbt,
+                  cls: latestData.desktopCls,
+                  speedIndex: latestData.desktopSpeedIndex,
+                },
+                mobile: {
+                  performance: latestData.mobilePerformance,
+                  accessibility: latestData.mobileAccessibility,
+                  bestPractices: latestData.mobileBestPractices,
+                  seo: latestData.mobileSeo,
+                  fcp: latestData.mobileFcp,
+                  lcp: latestData.mobileLcp,
+                  tbt: latestData.mobileTbt,
+                  cls: latestData.mobileCls,
+                  speedIndex: latestData.mobileSpeedIndex,
+                },
+              },
+            });
+          } else {
+            console.warn(`No valid data found in sheet: ${sheet.title}`);
+          }
+        } catch (sheetError: unknown) {
+          console.error(`Error processing sheet ${sheet.title}:`, sheetError);
+
+          // If we hit rate limit, break the loop and return what we have
+          const apiError = sheetError as ApiError;
+          if (apiError?.response?.status === 429) {
+            console.warn("Rate limit hit, returning partial results");
+            break;
+          }
+
+          // For other errors, continue processing remaining sheets
+          continue;
+        }
+      }
+
+      console.log(`Successfully processed ${results.length} sheets`);
+      return results;
+    } catch (error: unknown) {
+      console.error("Error in getAllMetrics:", error);
+      const apiError = error as ApiError;
+      if (apiError?.response?.status === 429) {
+        throw new Error(
+          "Rate limit exceeded. Please wait a moment and refresh the page.",
+        );
+      }
+      throw error;
+    }
   }),
 });
