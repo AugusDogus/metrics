@@ -76,19 +76,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
     );
 
     if (metric.type === "lighthouse") {
-      // Map metric key to MetricsChart metric type
-      const chartMetric =
-        metric.key === "desktopPerformance" ||
-        metric.key === "mobilePerformance"
-          ? "performance"
-          : metric.key === "desktopAccessibility" ||
-              metric.key === "mobileAccessibility"
-            ? "accessibility"
-            : metric.key === "desktopBestPractices" ||
-                metric.key === "mobileBestPractices"
-              ? "bestPractices"
-              : "seo";
-
       return (
         <Card key={metric.id}>
           <CardHeader className="pb-3">
@@ -97,25 +84,13 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
           <CardContent>
             <MetricsChart
               data={filteredData}
-              metric={chartMetric}
+              metric={metric.key}
               title={metric.label}
             />
           </CardContent>
         </Card>
       );
     } else {
-      // Map metric key to WebVitalsChart metric type
-      const chartMetric =
-        metric.key === "desktopFcp" || metric.key === "mobileFcp"
-          ? "fcp"
-          : metric.key === "desktopLcp" || metric.key === "mobileLcp"
-            ? "lcp"
-            : metric.key === "desktopTbt" || metric.key === "mobileTbt"
-              ? "tbt"
-              : metric.key === "desktopCls" || metric.key === "mobileCls"
-                ? "cls"
-                : "speedIndex";
-
       const formatValue =
         metric.unit === "s"
           ? (value: number) => `${(value / 1000).toFixed(2)}s`
@@ -133,7 +108,7 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
           <CardContent>
             <WebVitalsChart
               data={filteredData}
-              metric={chartMetric}
+              metric={metric.key}
               title={metric.label}
               formatValue={formatValue}
             />
