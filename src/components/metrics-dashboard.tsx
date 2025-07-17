@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
+import SimpleBar from "simplebar-react";
 import {
   filterDataByDateRange,
   type DateRange,
@@ -18,9 +19,41 @@ import {
   type UrlMetrics,
 } from "~/lib/schemas";
 
+import "simplebar-react/dist/simplebar.min.css";
+
 interface MetricsDashboardProps {
   sheets: SheetMetadata[];
   selectedSheetData: UrlMetrics;
+}
+
+// Extract the last two path segments from a URL for tab display
+function getTabDisplayName(url: string): string {
+  try {
+    // Handle URLs that might not have protocol
+    const urlToProcess = url.startsWith("http") ? url : `https://${url}`;
+    const urlObj = new URL(urlToProcess);
+    const pathSegments = urlObj.pathname.split("/").filter(Boolean);
+
+    // If no path segments (root/home page), return "Home"
+    if (pathSegments.length === 0) {
+      return "Home";
+    }
+
+    // Get the last two segments (or just one if only one exists)
+    const lastTwoSegments = pathSegments.slice(-2);
+    return lastTwoSegments.join("/").replaceAll("/", " ").replaceAll("-", " ");
+  } catch {
+    // Fallback: split by / and get last two segments
+    const segments = url.split("/").filter(Boolean);
+
+    if (segments.length === 0) {
+      return "Home";
+    }
+
+    // Get the last two segments (or just one if only one exists)
+    const lastTwoSegments = segments.slice(-2);
+    return lastTwoSegments.join("/");
+  }
 }
 
 export function MetricsDashboard({
@@ -130,23 +163,26 @@ export function MetricsDashboard({
       <Tabs
         value={selectedSheetData.name}
         onValueChange={handleTabChange}
-        className="w-full"
+        className="min-h-16 w-full"
       >
-        <TabsList
-          className="grid w-full"
-          style={{
-            gridTemplateColumns: `repeat(${sheets.length}, minmax(0, 1fr))`,
-          }}
-        >
-          {sheets.map((sheet) => (
-            <TabsTrigger
-              key={sheet.title}
-              value={sheet.title}
-              className="text-xs sm:text-sm"
-            >
-              {sheet.title}
-            </TabsTrigger>
-          ))}
+        <TabsList className="min-h-16 w-full">
+          <SimpleBar
+            forceVisible="x"
+            autoHide={false}
+            className="w-full overflow-x-auto pb-2"
+          >
+            <div className="mt-2 flex min-h-10 gap-1 pb-2">
+              {sheets.map((sheet) => (
+                <TabsTrigger
+                  key={sheet.title}
+                  value={sheet.title}
+                  className="text-xs whitespace-nowrap capitalize sm:text-sm"
+                >
+                  {getTabDisplayName(sheet.title)}
+                </TabsTrigger>
+              ))}
+            </div>
+          </SimpleBar>
         </TabsList>
 
         {/* Only render the selected tab content since we only have data for one sheet */}
