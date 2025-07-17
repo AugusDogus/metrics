@@ -1,9 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { DateRangeSelector } from "~/components/date-range-selector";
 import { MetricsDashboard } from "~/components/metrics-dashboard";
-import { MetricsSelector } from "~/components/metrics-selector";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { api, HydrateClient } from "~/trpc/server";
 
 function LoadingState() {
@@ -49,9 +46,7 @@ async function MetricsContent({ sheetId }: { sheetId: string }) {
     sheetTitle: decodedSheetTitle,
   });
 
-  return (
-    <MetricsDashboard sheets={sheets} selectedSheetData={selectedSheetData} />
-  );
+  return <MetricsDashboard selectedSheetData={selectedSheetData} />;
 }
 
 export default async function SheetPage({ params }: SheetPageProps) {
@@ -59,39 +54,20 @@ export default async function SheetPage({ params }: SheetPageProps) {
 
   return (
     <HydrateClient>
-      <div className="bg-background min-h-screen">
-        {/* Header */}
-        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
-          <div className="container mx-auto flex h-14 items-center justify-between px-4">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-lg font-semibold">Lighthouse Metrics</h1>
-            </div>
-            <div className="flex items-center space-x-2">
-              <DateRangeSelector />
-              <MetricsSelector />
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Performance Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Monitor your website&apos;s performance metrics from Google
+            Lighthouse.
+          </p>
+        </div>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Performance Dashboard
-              </h1>
-              <p className="text-muted-foreground">
-                Monitor your website&apos;s performance metrics from Google
-                Lighthouse.
-              </p>
-            </div>
-
-            <Suspense fallback={<LoadingState />}>
-              <MetricsContent sheetId={sheetId} />
-            </Suspense>
-          </div>
-        </main>
+        <Suspense fallback={<LoadingState />}>
+          <MetricsContent sheetId={sheetId} />
+        </Suspense>
       </div>
     </HydrateClient>
   );
