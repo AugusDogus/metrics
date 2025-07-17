@@ -4,7 +4,6 @@ import { Check, Settings } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +53,7 @@ export function MetricsSelector() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" className="gap-2">
           <Settings className="h-4 w-4" />
           Metrics ({selectedMetricIds.length})
         </Button>
@@ -79,26 +78,18 @@ export function MetricsSelector() {
         {lighthouseMetrics.map((metric) => (
           <DropdownMenuItem
             key={metric.id}
-            className="flex cursor-pointer items-center space-x-2"
+            className="flex cursor-pointer items-center justify-between"
             onSelect={(e) => {
               e.preventDefault();
               handleMetricToggle(metric.id);
             }}
           >
-            <Checkbox
-              id={metric.id}
-              checked={selectedMetricIds.includes(metric.id)}
-              onCheckedChange={() => handleMetricToggle(metric.id)}
-            />
-            <label
-              htmlFor={metric.id}
-              className="flex-1 cursor-pointer text-sm"
-            >
-              {metric.label}
-            </label>
-            {selectedMetricIds.includes(metric.id) && (
-              <Check className="text-primary h-4 w-4" />
-            )}
+            <span className="text-sm">{metric.label}</span>
+            <div className="flex h-4 w-4 items-center justify-center">
+              {selectedMetricIds.includes(metric.id) && (
+                <Check className="text-primary h-4 w-4" />
+              )}
+            </div>
           </DropdownMenuItem>
         ))}
 
@@ -109,26 +100,18 @@ export function MetricsSelector() {
         {webVitalMetrics.map((metric) => (
           <DropdownMenuItem
             key={metric.id}
-            className="flex cursor-pointer items-center space-x-2"
+            className="flex cursor-pointer items-center justify-between"
             onSelect={(e) => {
               e.preventDefault();
               handleMetricToggle(metric.id);
             }}
           >
-            <Checkbox
-              id={metric.id}
-              checked={selectedMetricIds.includes(metric.id)}
-              onCheckedChange={() => handleMetricToggle(metric.id)}
-            />
-            <label
-              htmlFor={metric.id}
-              className="flex-1 cursor-pointer text-sm"
-            >
-              {metric.label}
-            </label>
-            {selectedMetricIds.includes(metric.id) && (
-              <Check className="text-primary h-4 w-4" />
-            )}
+            <span className="text-sm">{metric.label}</span>
+            <div className="flex h-4 w-4 items-center justify-center">
+              {selectedMetricIds.includes(metric.id) && (
+                <Check className="text-primary h-4 w-4" />
+              )}
+            </div>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
