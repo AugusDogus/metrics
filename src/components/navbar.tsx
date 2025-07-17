@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { DateRangeSelector } from "~/components/date-range-selector";
 import { MetricsSelector } from "~/components/metrics-selector";
 import { ThemeToggle } from "~/components/theme-toggle";
@@ -52,6 +52,7 @@ function getTabDisplayName(url: string): string {
 
 export function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: sheets = [] } = api.metrics.getAllSheets.useQuery();
 
   // Get current sheet title from URL
@@ -71,6 +72,13 @@ export function Navbar() {
   };
 
   const currentSheetTitle = getCurrentSheetTitle();
+
+  // Construct URL with preserved search parameters
+  const createTabUrl = (encodedTitle: string) => {
+    const url = `/${encodedTitle}`;
+    const params = searchParams.toString();
+    return params ? `${url}?${params}` : url;
+  };
 
   return (
     <TooltipProvider>
@@ -101,7 +109,7 @@ export function Navbar() {
                       <Tooltip key={sheet.title}>
                         <TooltipTrigger className="flex-1">
                           <Link
-                            href={`/${encodedTitle}`}
+                            href={createTabUrl(encodedTitle)}
                             className={`focus-visible:ring-ring inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-transparent px-2 py-1 text-xs font-medium whitespace-nowrap capitalize transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:text-sm ${
                               isActive
                                 ? "bg-foreground text-background shadow-sm"
