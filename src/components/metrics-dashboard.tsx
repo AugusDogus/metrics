@@ -65,7 +65,7 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
     } else {
       const formatValue =
         metric.unit === "s"
-          ? (value: number) => `${(value / 1000).toFixed(2)}s`
+          ? (value: number) => `${value.toFixed(2)}s`
           : metric.unit === "ms"
             ? (value: number) => `${value.toFixed(0)}ms`
             : metric.unit === ""

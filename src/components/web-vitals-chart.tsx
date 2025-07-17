@@ -28,11 +28,11 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const defaultFormatters = {
-  fcp: (value: number) => `${(value / 1000).toFixed(2)}s`,
-  lcp: (value: number) => `${(value / 1000).toFixed(2)}s`,
+  fcp: (value: number) => `${value.toFixed(2)}s`,
+  lcp: (value: number) => `${value.toFixed(2)}s`,
   tbt: (value: number) => `${value.toFixed(0)}ms`,
   cls: (value: number) => value.toFixed(3),
-  speedIndex: (value: number) => `${(value / 1000).toFixed(2)}s`,
+  speedIndex: (value: number) => `${value.toFixed(2)}s`,
 };
 
 export function WebVitalsChart({

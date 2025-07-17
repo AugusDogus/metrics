@@ -19,10 +19,21 @@ interface ApiError {
 }
 
 // Helper function to convert string/number to number safely
+// Handles values like "1.6 s", "2,410 ms", or plain numbers
 function toNumber(value: string | number | undefined): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") {
-    const parsed = parseFloat(value);
+    // Remove commas from numbers like "2,410"
+    const cleanValue = value.replace(/,/g, "");
+
+    // Check if it contains "ms" - convert to seconds
+    if (cleanValue.includes("ms")) {
+      const parsed = parseFloat(cleanValue);
+      return isNaN(parsed) ? 0 : parsed / 1000; // Convert ms to seconds
+    }
+
+    // For values with "s" or no unit, just parse the number
+    const parsed = parseFloat(cleanValue);
     return isNaN(parsed) ? 0 : parsed;
   }
   return 0;
