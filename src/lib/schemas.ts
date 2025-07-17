@@ -31,16 +31,6 @@ export const sheetRowSchema = z.object({
   "Mobile Speed Index": z.union([z.string(), z.number()]),
 });
 
-// Helper function to convert string/number to number safely
-function toNumber(value: string | number | undefined): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
-
 // Chart data point for recharts
 export const chartDataPointSchema = z.object({
   date: z.string(),
