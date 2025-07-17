@@ -58,13 +58,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
     selectedMetricIds.includes(metric.id),
   );
 
-  const lighthouseMetrics = selectedMetricConfigs.filter(
-    (m) => m.type === "lighthouse",
-  );
-  const webVitalMetrics = selectedMetricConfigs.filter(
-    (m) => m.type === "webvital",
-  );
-
   const renderMetricCard = (
     metric: (typeof AVAILABLE_METRICS)[number],
     urlData: UrlMetrics,
@@ -173,29 +166,14 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
               </div>
             )}
 
-            {/* Lighthouse Scores */}
-            {lighthouseMetrics.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Lighthouse Scores</h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {lighthouseMetrics.map((metric) =>
-                    renderMetricCard(metric, urlData),
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Web Vitals & Performance */}
-            {webVitalMetrics.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">
-                  Web Vitals & Performance
-                </h3>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {webVitalMetrics.map((metric) =>
-                    renderMetricCard(metric, urlData),
-                  )}
-                </div>
+            {/* All Selected Metrics */}
+            {selectedMetricConfigs.length > 0 && (
+              <div className="space-y-6">
+                {selectedMetricConfigs.map((metric) => (
+                  <div key={metric.id} className="w-full">
+                    {renderMetricCard(metric, urlData)}
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
