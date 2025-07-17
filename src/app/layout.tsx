@@ -10,10 +10,10 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { api, HydrateClient } from "~/trpc/server";
 
 export const metadata: Metadata = {
-  title: "Lighthouse Metrics Dashboard",
+  title: "Lighthouse Metrics",
   description:
     "Monitor your website's performance metrics from Google Lighthouse",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.svg" }],
 };
 
 const geist = Geist({
