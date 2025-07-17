@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import SimpleBar from "simplebar-react";
 import { DateRangeSelector } from "~/components/date-range-selector";
 import { MetricsSelector } from "~/components/metrics-selector";
 import { ThemeToggle } from "~/components/theme-toggle";
@@ -12,13 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { type SheetMetadata } from "~/lib/schemas";
-
-import "simplebar-react/dist/simplebar.min.css";
-
-interface NavbarProps {
-  sheets: SheetMetadata[];
-}
+import { api } from "~/trpc/react";
 
 // Extract the last path segment from a URL for tab display
 function getTabDisplayName(url: string): string {
@@ -28,30 +21,38 @@ function getTabDisplayName(url: string): string {
     const urlObj = new URL(urlToProcess);
     const pathSegments = urlObj.pathname.split("/").filter(Boolean);
 
-    // If no path segments (root/home page), return "Home"
     if (pathSegments.length === 0) {
       return "Home";
     }
 
-    // Get the last segment and clean it up
+    // Get the last segment and format it
     const lastSegment = pathSegments[pathSegments.length - 1];
-    return lastSegment ? lastSegment.replaceAll("-", " ") : "Home";
+    if (!lastSegment) return "Home";
+
+    return lastSegment
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   } catch {
-    // Fallback: split by / and get last segment
-    const segments = url.split("/").filter(Boolean);
+    // If URL parsing fails, extract from the raw string
+    const parts = url.split("/").filter(Boolean);
+    if (parts.length === 0) return "Home";
 
-    if (segments.length === 0) {
-      return "Home";
-    }
+    const lastPart = parts[parts.length - 1];
+    if (!lastPart) return "Home";
 
-    // Get the last segment and clean it up
-    const lastSegment = segments[segments.length - 1];
-    return lastSegment ? lastSegment.replaceAll("-", " ") : "Home";
+    return lastPart
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 }
 
-export function Navbar({ sheets }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
+  const { data: sheets = [] } = api.metrics.getAllSheets.useQuery();
 
   // Get current sheet title from URL
   const getCurrentSheetTitle = () => {
@@ -60,6 +61,7 @@ export function Navbar({ sheets }: NavbarProps) {
     }
 
     const encodedTitle = pathname.replace("/", "");
+
     try {
       const decodedTitle = atob(encodedTitle);
       return sheets.find((sheet) => sheet.title === decodedTitle)?.title;
@@ -89,11 +91,7 @@ export function Navbar({ sheets }: NavbarProps) {
           {/* Sheet navigation tabs */}
           {sheets.length > 0 && (
             <div className="border-t">
-              <SimpleBar
-                forceVisible="x"
-                autoHide={false}
-                className="w-full overflow-x-auto pb-2"
-              >
+              <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 w-full overflow-x-auto">
                 <div className="mt-2 flex min-h-10 gap-1 pb-2">
                   {sheets.map((sheet) => {
                     const encodedTitle = btoa(sheet.title);
@@ -120,7 +118,7 @@ export function Navbar({ sheets }: NavbarProps) {
                     );
                   })}
                 </div>
-              </SimpleBar>
+              </div>
             </div>
           )}
         </div>

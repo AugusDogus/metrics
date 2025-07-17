@@ -3,7 +3,6 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { Suspense } from "react";
 
 import { Navbar } from "~/components/navbar";
 import { ThemeProvider } from "~/components/theme-provider";
@@ -22,19 +21,12 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-async function NavbarWithData() {
-  try {
-    const sheets = await api.metrics.getAllSheets();
-    return <Navbar sheets={sheets} />;
-  } catch (error) {
-    console.error("Failed to load sheets for navbar:", error);
-    return <Navbar sheets={[]} />;
-  }
-}
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Prefetch sheets data for the navbar
+  await api.metrics.getAllSheets.prefetch();
+
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body>
@@ -48,9 +40,7 @@ export default function RootLayout({
             <NuqsAdapter>
               <HydrateClient>
                 <div className="bg-background min-h-screen">
-                  <Suspense fallback={<div className="h-14 border-b" />}>
-                    <NavbarWithData />
-                  </Suspense>
+                  <Navbar />
                   <main className="container mx-auto px-4 py-8">
                     {children}
                   </main>
