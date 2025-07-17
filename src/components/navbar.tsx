@@ -106,7 +106,7 @@ export function Navbar({ sheets }: NavbarProps) {
                             href={`/${encodedTitle}`}
                             className={`focus-visible:ring-ring inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-transparent px-2 py-1 text-xs font-medium whitespace-nowrap capitalize transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:text-sm ${
                               isActive
-                                ? "bg-background text-foreground shadow-sm"
+                                ? "bg-foreground text-background shadow-sm"
                                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             }`}
                           >
