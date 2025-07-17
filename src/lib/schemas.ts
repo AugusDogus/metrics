@@ -1,62 +1,92 @@
 import { z } from "zod";
 
-// Core Lighthouse metrics schema
-export const lighthouseMetricsSchema = z.object({
-  url: z.string().url(),
-  timestamp: z.string().datetime(),
-  performance: z.number().min(0).max(100),
-  accessibility: z.number().min(0).max(100),
-  bestPractices: z.number().min(0).max(100),
-  seo: z.number().min(0).max(100),
-  firstContentfulPaint: z.number().positive(),
-  largestContentfulPaint: z.number().positive(),
-  firstInputDelay: z.number().min(0),
-  cumulativeLayoutShift: z.number().min(0),
-  speedIndex: z.number().positive(),
-  totalBlockingTime: z.number().min(0),
-});
-
 // Sheet row schema from Google Sheets
 export const sheetRowSchema = z.object({
-  URL: z.string(),
-  Timestamp: z.string(),
-  Performance: z.union([z.string(), z.number()]),
-  Accessibility: z.union([z.string(), z.number()]),
-  "Best Practices": z.union([z.string(), z.number()]),
-  SEO: z.union([z.string(), z.number()]),
-  "First Contentful Paint": z.union([z.string(), z.number()]),
-  "Largest Contentful Paint": z.union([z.string(), z.number()]),
-  "First Input Delay": z.union([z.string(), z.number()]),
-  "Cumulative Layout Shift": z.union([z.string(), z.number()]),
-  "Speed Index": z.union([z.string(), z.number()]),
-  "Total Blocking Time": z.union([z.string(), z.number()]),
+  Date: z.string(),
+  Website: z.string(),
+  "Desktop Performance Score": z.union([z.string(), z.number()]),
+  "Desktop Accessibility Score": z.union([z.string(), z.number()]),
+  "Desktop Best Practices Score": z.union([z.string(), z.number()]),
+  "Desktop SEO Score": z.union([z.string(), z.number()]),
+  "Desktop First Contentful Paint": z.union([z.string(), z.number()]),
+  "Desktop Largest Contentful Paint": z.union([z.string(), z.number()]),
+  "Desktop Total Blocking Time": z.union([z.string(), z.number()]),
+  "Desktop Cumulative Layout Shift": z.union([z.string(), z.number()]),
+  "Desktop Speed Index": z.union([z.string(), z.number()]),
+  "Mobile Performance Score": z.union([z.string(), z.number()]),
+  "Mobile Accessibility Score": z.union([z.string(), z.number()]),
+  "Mobile Best Practices Score": z.union([z.string(), z.number()]),
+  "Mobile SEO Score": z.union([z.string(), z.number()]),
+  "Mobile First Contentful Paint": z.union([z.string(), z.number()]),
+  "Mobile Largest Contentful Paint": z.union([z.string(), z.number()]),
+  "Mobile Total Blocking Time": z.union([z.string(), z.number()]),
+  "Mobile Cumulative Layout Shift": z.union([z.string(), z.number()]),
+  "Mobile Speed Index": z.union([z.string(), z.number()]),
 });
 
-// Processed metrics for charts
+// Processed metrics for charts - separating desktop and mobile
 export const chartDataPointSchema = z.object({
   date: z.string(),
-  performance: z.number(),
-  accessibility: z.number(),
-  bestPractices: z.number(),
-  seo: z.number(),
-  fcp: z.number(),
-  lcp: z.number(),
-  fid: z.number(),
-  cls: z.number(),
-  speedIndex: z.number(),
-  tbt: z.number(),
+  // Desktop metrics
+  desktopPerformance: z.number(),
+  desktopAccessibility: z.number(),
+  desktopBestPractices: z.number(),
+  desktopSeo: z.number(),
+  desktopFcp: z.number(),
+  desktopLcp: z.number(),
+  desktopTbt: z.number(),
+  desktopCls: z.number(),
+  desktopSpeedIndex: z.number(),
+  // Mobile metrics
+  mobilePerformance: z.number(),
+  mobileAccessibility: z.number(),
+  mobileBestPractices: z.number(),
+  mobileSeo: z.number(),
+  mobileFcp: z.number(),
+  mobileLcp: z.number(),
+  mobileTbt: z.number(),
+  mobileCls: z.number(),
+  mobileSpeedIndex: z.number(),
+});
+
+// Latest metrics summary
+export const latestMetricsSchema = z.object({
+  url: z.string(),
+  timestamp: z.string(),
+  desktop: z.object({
+    performance: z.number(),
+    accessibility: z.number(),
+    bestPractices: z.number(),
+    seo: z.number(),
+    fcp: z.number(),
+    lcp: z.number(),
+    tbt: z.number(),
+    cls: z.number(),
+    speedIndex: z.number(),
+  }),
+  mobile: z.object({
+    performance: z.number(),
+    accessibility: z.number(),
+    bestPractices: z.number(),
+    seo: z.number(),
+    fcp: z.number(),
+    lcp: z.number(),
+    tbt: z.number(),
+    cls: z.number(),
+    speedIndex: z.number(),
+  }),
 });
 
 // URL group schema (each sheet represents one URL)
 export const urlMetricsSchema = z.object({
-  url: z.string().url(),
+  url: z.string(),
   name: z.string(),
   data: z.array(chartDataPointSchema),
-  latestMetrics: lighthouseMetricsSchema,
+  latestMetrics: latestMetricsSchema,
 });
 
 // Export types
-export type LighthouseMetrics = z.infer<typeof lighthouseMetricsSchema>;
 export type SheetRow = z.infer<typeof sheetRowSchema>;
 export type ChartDataPoint = z.infer<typeof chartDataPointSchema>;
+export type LatestMetrics = z.infer<typeof latestMetricsSchema>;
 export type UrlMetrics = z.infer<typeof urlMetricsSchema>;

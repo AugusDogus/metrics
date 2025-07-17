@@ -11,76 +11,67 @@ import { type ChartDataPoint } from "~/lib/schemas";
 
 interface WebVitalsChartProps {
   data: ChartDataPoint[];
-  metric: keyof Pick<
-    ChartDataPoint,
-    "fcp" | "lcp" | "fid" | "cls" | "speedIndex" | "tbt"
-  >;
+  metric: "fcp" | "lcp" | "tbt" | "cls" | "speedIndex";
   title: string;
-  color: string;
-  unit?: string;
   formatValue?: (value: number) => string;
 }
 
 const chartConfig = {
-  fcp: {
-    label: "First Contentful Paint",
+  desktop: {
+    label: "Desktop",
     color: "hsl(var(--chart-1))",
   },
-  lcp: {
-    label: "Largest Contentful Paint",
+  mobile: {
+    label: "Mobile",
     color: "hsl(var(--chart-2))",
-  },
-  fid: {
-    label: "First Input Delay",
-    color: "hsl(var(--chart-3))",
-  },
-  cls: {
-    label: "Cumulative Layout Shift",
-    color: "hsl(var(--chart-4))",
-  },
-  speedIndex: {
-    label: "Speed Index",
-    color: "hsl(var(--chart-5))",
-  },
-  tbt: {
-    label: "Total Blocking Time",
-    color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig;
 
 const defaultFormatters = {
   fcp: (value: number) => `${(value / 1000).toFixed(2)}s`,
   lcp: (value: number) => `${(value / 1000).toFixed(2)}s`,
-  fid: (value: number) => `${value.toFixed(0)}ms`,
+  tbt: (value: number) => `${value.toFixed(0)}ms`,
   cls: (value: number) => value.toFixed(3),
   speedIndex: (value: number) => `${(value / 1000).toFixed(2)}s`,
-  tbt: (value: number) => `${value.toFixed(0)}ms`,
 };
 
 export function WebVitalsChart({
   data,
   metric,
   title,
-  color,
-  unit,
   formatValue,
 }: WebVitalsChartProps) {
-  const latestValue = data[data.length - 1]?.[metric] ?? 0;
+  const desktopKey =
+    `desktop${metric.charAt(0).toUpperCase() + metric.slice(1)}` as keyof ChartDataPoint;
+  const mobileKey =
+    `mobile${metric.charAt(0).toUpperCase() + metric.slice(1)}` as keyof ChartDataPoint;
+
+  const latestDesktop = data[data.length - 1]?.[desktopKey] ?? 0;
+  const latestMobile = data[data.length - 1]?.[mobileKey] ?? 0;
   const formatter = formatValue ?? defaultFormatters[metric];
 
   // Calculate appropriate domain based on metric
-  const values = data.map((d) => d[metric]);
-  const maxValue = Math.max(...values);
-  const minValue = Math.min(...values);
+  const allValues = data.flatMap((d) => [
+    d[desktopKey] as number,
+    d[mobileKey] as number,
+  ]);
+  const maxValue = Math.max(...allValues);
+  const minValue = Math.min(...allValues);
   const padding = (maxValue - minValue) * 0.1;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="text-2xl font-bold" style={{ color }}>
-          {formatter(latestValue)}
-          {unit && ` ${unit}`}
+        <div className="flex gap-4 text-sm">
+          <div className="flex items-center gap-1">
+            <div className="bg-chart-1 h-2 w-2 rounded-full"></div>
+            <span>Desktop: {formatter(latestDesktop as number)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="bg-chart-2 h-2 w-2 rounded-full"></div>
+            <span>Mobile: {formatter(latestMobile as number)}</span>
+          </div>
         </div>
       </div>
       <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -109,24 +100,35 @@ export function WebVitalsChart({
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            tickFormatter={formatter}
+            tickFormatter={(value) => formatter(value as number)}
           />
           <ChartTooltip
             cursor={false}
             content={
               <ChartTooltipContent
                 indicator="dot"
-                formatter={(value) => [formatter(value as number), title]}
+                formatter={(value, name) => [
+                  formatter(value as number),
+                  name === desktopKey ? "Desktop" : "Mobile",
+                ]}
               />
             }
           />
           <Area
-            dataKey={metric}
+            dataKey={desktopKey}
             type="natural"
-            fill={color}
+            fill="var(--color-desktop)"
             fillOpacity={0.4}
-            stroke={color}
+            stroke="var(--color-desktop)"
             stackId="a"
+          />
+          <Area
+            dataKey={mobileKey}
+            type="natural"
+            fill="var(--color-mobile)"
+            fillOpacity={0.4}
+            stroke="var(--color-mobile)"
+            stackId="b"
           />
         </AreaChart>
       </ChartContainer>

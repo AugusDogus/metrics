@@ -11,47 +11,43 @@ import { type ChartDataPoint } from "~/lib/schemas";
 
 interface MetricsChartProps {
   data: ChartDataPoint[];
-  metric: keyof Pick<
-    ChartDataPoint,
-    "performance" | "accessibility" | "bestPractices" | "seo"
-  >;
+  metric: "performance" | "accessibility" | "bestPractices" | "seo";
   title: string;
-  color: string;
 }
 
 const chartConfig = {
-  performance: {
-    label: "Performance",
+  desktop: {
+    label: "Desktop",
     color: "hsl(var(--chart-1))",
   },
-  accessibility: {
-    label: "Accessibility",
+  mobile: {
+    label: "Mobile",
     color: "hsl(var(--chart-2))",
-  },
-  bestPractices: {
-    label: "Best Practices",
-    color: "hsl(var(--chart-3))",
-  },
-  seo: {
-    label: "SEO",
-    color: "hsl(var(--chart-4))",
   },
 } satisfies ChartConfig;
 
-export function MetricsChart({
-  data,
-  metric,
-  title,
-  color,
-}: MetricsChartProps) {
-  const latestValue = data[data.length - 1]?.[metric] ?? 0;
+export function MetricsChart({ data, metric, title }: MetricsChartProps) {
+  const desktopKey =
+    `desktop${metric.charAt(0).toUpperCase() + metric.slice(1)}` as keyof ChartDataPoint;
+  const mobileKey =
+    `mobile${metric.charAt(0).toUpperCase() + metric.slice(1)}` as keyof ChartDataPoint;
+
+  const latestDesktop = data[data.length - 1]?.[desktopKey] ?? 0;
+  const latestMobile = data[data.length - 1]?.[mobileKey] ?? 0;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="text-2xl font-bold" style={{ color }}>
-          {latestValue}
+        <div className="flex gap-4 text-sm">
+          <div className="flex items-center gap-1">
+            <div className="bg-chart-1 h-2 w-2 rounded-full"></div>
+            <span>Desktop: {latestDesktop}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="bg-chart-2 h-2 w-2 rounded-full"></div>
+            <span>Mobile: {latestMobile}</span>
+          </div>
         </div>
       </div>
       <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -86,12 +82,20 @@ export function MetricsChart({
             content={<ChartTooltipContent indicator="dot" />}
           />
           <Area
-            dataKey={metric}
+            dataKey={desktopKey}
             type="natural"
-            fill={color}
+            fill="var(--color-desktop)"
             fillOpacity={0.4}
-            stroke={color}
+            stroke="var(--color-desktop)"
             stackId="a"
+          />
+          <Area
+            dataKey={mobileKey}
+            type="natural"
+            fill="var(--color-mobile)"
+            fillOpacity={0.4}
+            stroke="var(--color-mobile)"
+            stackId="b"
           />
         </AreaChart>
       </ChartContainer>

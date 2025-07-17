@@ -50,7 +50,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                   data={urlData.data}
                   metric="performance"
                   title="Performance"
-                  color="hsl(var(--chart-1))"
                 />
               </CardContent>
             </Card>
@@ -64,7 +63,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                   data={urlData.data}
                   metric="accessibility"
                   title="Accessibility"
-                  color="hsl(var(--chart-2))"
                 />
               </CardContent>
             </Card>
@@ -78,7 +76,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                   data={urlData.data}
                   metric="bestPractices"
                   title="Best Practices"
-                  color="hsl(var(--chart-3))"
                 />
               </CardContent>
             </Card>
@@ -88,12 +85,7 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                 <CardTitle className="text-base">SEO</CardTitle>
               </CardHeader>
               <CardContent>
-                <MetricsChart
-                  data={urlData.data}
-                  metric="seo"
-                  title="SEO"
-                  color="hsl(var(--chart-4))"
-                />
+                <MetricsChart data={urlData.data} metric="seo" title="SEO" />
               </CardContent>
             </Card>
           </div>
@@ -113,7 +105,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                     data={urlData.data}
                     metric="fcp"
                     title="FCP"
-                    color="hsl(var(--chart-1))"
                   />
                 </CardContent>
               </Card>
@@ -129,7 +120,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                     data={urlData.data}
                     metric="lcp"
                     title="LCP"
-                    color="hsl(var(--chart-2))"
                   />
                 </CardContent>
               </Card>
@@ -145,7 +135,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                     data={urlData.data}
                     metric="cls"
                     title="CLS"
-                    color="hsl(var(--chart-4))"
                   />
                 </CardContent>
               </Card>
@@ -155,17 +144,18 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
           {/* Additional Metrics */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Additional Metrics</h3>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">First Input Delay</CardTitle>
+                  <CardTitle className="text-base">
+                    Total Blocking Time
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <WebVitalsChart
                     data={urlData.data}
-                    metric="fid"
-                    title="FID"
-                    color="hsl(var(--chart-3))"
+                    metric="tbt"
+                    title="TBT"
                   />
                 </CardContent>
               </Card>
@@ -179,23 +169,6 @@ export function MetricsDashboard({ urlMetrics }: MetricsDashboardProps) {
                     data={urlData.data}
                     metric="speedIndex"
                     title="Speed Index"
-                    color="hsl(var(--chart-5))"
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">
-                    Total Blocking Time
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <WebVitalsChart
-                    data={urlData.data}
-                    metric="tbt"
-                    title="TBT"
-                    color="hsl(var(--chart-1))"
                   />
                 </CardContent>
               </Card>

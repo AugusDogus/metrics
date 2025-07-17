@@ -6,9 +6,73 @@ import {
 } from "~/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-// Helper function to convert string/number to number
+// Helper function to convert string/number to number, handling "N/A" values
 function toNumber(value: string | number): number {
-  return typeof value === "string" ? parseFloat(value) || 0 : value;
+  if (typeof value === "number") return value;
+  if (value === "N/A" || value === "") return 0;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+// Helper function to parse formatted time values (e.g., "1.2 s" -> 1200)
+function parseTimeValue(value: string | number): number {
+  if (typeof value === "number") return value;
+  if (value === "N/A" || value === "") return 0;
+
+  // Remove units and convert to ms
+  const cleaned = value.toString().replace(/[^\d.]/g, "");
+  const parsed = parseFloat(cleaned);
+  if (isNaN(parsed)) return 0;
+
+  // If value contains 's', convert to ms
+  if (value.includes("s")) return parsed * 1000;
+  return parsed;
+}
+
+// Helper function to parse date from the specific format used in sheets
+function parseSheetDate(dateString: string | undefined): string {
+  if (!dateString) {
+    return new Date().toISOString().split("T")[0]!; // fallback to today
+  }
+
+  try {
+    // Format is like "12/25/2024, 14.30" - replace period with colon for proper parsing
+    const normalizedDate = dateString.replace(/(\d{2})\.(\d{2})$/, "$1:$2");
+    const parsedDate = new Date(normalizedDate);
+
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(`Invalid date format: ${dateString}`);
+      return new Date().toISOString().split("T")[0]!; // fallback to today
+    }
+
+    return parsedDate.toISOString().split("T")[0]!;
+  } catch (error) {
+    console.warn(`Error parsing date: ${dateString}`, error);
+    return new Date().toISOString().split("T")[0]!; // fallback to today
+  }
+}
+
+// Helper function to parse full timestamp
+function parseSheetTimestamp(dateString: string | undefined): string {
+  if (!dateString) {
+    return new Date().toISOString();
+  }
+
+  try {
+    // Format is like "12/25/2024, 14.30" - replace period with colon for proper parsing
+    const normalizedDate = dateString.replace(/(\d{2})\.(\d{2})$/, "$1:$2");
+    const parsedDate = new Date(normalizedDate);
+
+    if (isNaN(parsedDate.getTime())) {
+      console.warn(`Invalid timestamp format: ${dateString}`);
+      return new Date().toISOString();
+    }
+
+    return parsedDate.toISOString();
+  } catch (error) {
+    console.warn(`Error parsing timestamp: ${dateString}`, error);
+    return new Date().toISOString();
+  }
 }
 
 // Helper function to process sheet data into chart format
@@ -20,17 +84,27 @@ function processSheetData(rows: unknown[]): ChartDataPoint[] {
 
       const data = parsed.data;
       return {
-        date: new Date(data.Timestamp).toISOString().split("T")[0],
-        performance: toNumber(data.Performance),
-        accessibility: toNumber(data.Accessibility),
-        bestPractices: toNumber(data["Best Practices"]),
-        seo: toNumber(data.SEO),
-        fcp: toNumber(data["First Contentful Paint"]),
-        lcp: toNumber(data["Largest Contentful Paint"]),
-        fid: toNumber(data["First Input Delay"]),
-        cls: toNumber(data["Cumulative Layout Shift"]),
-        speedIndex: toNumber(data["Speed Index"]),
-        tbt: toNumber(data["Total Blocking Time"]),
+        date: parseSheetDate(data.Date),
+        // Desktop metrics
+        desktopPerformance: toNumber(data["Desktop Performance Score"]),
+        desktopAccessibility: toNumber(data["Desktop Accessibility Score"]),
+        desktopBestPractices: toNumber(data["Desktop Best Practices Score"]),
+        desktopSeo: toNumber(data["Desktop SEO Score"]),
+        desktopFcp: parseTimeValue(data["Desktop First Contentful Paint"]),
+        desktopLcp: parseTimeValue(data["Desktop Largest Contentful Paint"]),
+        desktopTbt: parseTimeValue(data["Desktop Total Blocking Time"]),
+        desktopCls: toNumber(data["Desktop Cumulative Layout Shift"]),
+        desktopSpeedIndex: parseTimeValue(data["Desktop Speed Index"]),
+        // Mobile metrics
+        mobilePerformance: toNumber(data["Mobile Performance Score"]),
+        mobileAccessibility: toNumber(data["Mobile Accessibility Score"]),
+        mobileBestPractices: toNumber(data["Mobile Best Practices Score"]),
+        mobileSeo: toNumber(data["Mobile SEO Score"]),
+        mobileFcp: parseTimeValue(data["Mobile First Contentful Paint"]),
+        mobileLcp: parseTimeValue(data["Mobile Largest Contentful Paint"]),
+        mobileTbt: parseTimeValue(data["Mobile Total Blocking Time"]),
+        mobileCls: toNumber(data["Mobile Cumulative Layout Shift"]),
+        mobileSpeedIndex: parseTimeValue(data["Mobile Speed Index"]),
       };
     })
     .filter((item): item is ChartDataPoint => item !== null)
@@ -38,11 +112,12 @@ function processSheetData(rows: unknown[]): ChartDataPoint[] {
 }
 
 export const metricsRouter = createTRPCRouter({
-  // Get all sheets (URLs) available
+  // Get all sheets (URLs) available - skip the first sheet (dashboard)
   getAllSheets: publicProcedure.query(async ({ ctx }) => {
     await ctx.doc.loadInfo();
 
-    return ctx.doc.sheetsByIndex.map((sheet) => ({
+    // Skip the first sheet as it's the dashboard
+    return ctx.doc.sheetsByIndex.slice(1).map((sheet) => ({
       id: sheet.sheetId,
       title: sheet.title,
       rowCount: sheet.rowCount,
@@ -68,7 +143,9 @@ export const metricsRouter = createTRPCRouter({
       }
 
       const latestData = data[data.length - 1]!;
-      const url = (rows[0]?.get("URL") as string) || input.sheetTitle;
+      const url = latestData
+        ? (rows[0]?.get("Website") as string)
+        : input.sheetTitle;
 
       return {
         url,
@@ -76,35 +153,50 @@ export const metricsRouter = createTRPCRouter({
         data,
         latestMetrics: {
           url,
-          timestamp: new Date(latestData.date).toISOString(),
-          performance: latestData.performance,
-          accessibility: latestData.accessibility,
-          bestPractices: latestData.bestPractices,
-          seo: latestData.seo,
-          firstContentfulPaint: latestData.fcp,
-          largestContentfulPaint: latestData.lcp,
-          firstInputDelay: latestData.fid,
-          cumulativeLayoutShift: latestData.cls,
-          speedIndex: latestData.speedIndex,
-          totalBlockingTime: latestData.tbt,
+          timestamp: parseSheetTimestamp(
+            rows[0]?.get("Date") as string | undefined,
+          ),
+          desktop: {
+            performance: latestData.desktopPerformance,
+            accessibility: latestData.desktopAccessibility,
+            bestPractices: latestData.desktopBestPractices,
+            seo: latestData.desktopSeo,
+            fcp: latestData.desktopFcp,
+            lcp: latestData.desktopLcp,
+            tbt: latestData.desktopTbt,
+            cls: latestData.desktopCls,
+            speedIndex: latestData.desktopSpeedIndex,
+          },
+          mobile: {
+            performance: latestData.mobilePerformance,
+            accessibility: latestData.mobileAccessibility,
+            bestPractices: latestData.mobileBestPractices,
+            seo: latestData.mobileSeo,
+            fcp: latestData.mobileFcp,
+            lcp: latestData.mobileLcp,
+            tbt: latestData.mobileTbt,
+            cls: latestData.mobileCls,
+            speedIndex: latestData.mobileSpeedIndex,
+          },
         },
       } satisfies UrlMetrics;
     }),
 
-  // Get all metrics for all sheets
+  // Get all metrics for all sheets - skip the first sheet (dashboard)
   getAllMetrics: publicProcedure.query(async ({ ctx }) => {
     await ctx.doc.loadInfo();
 
     const results: UrlMetrics[] = [];
 
-    for (const sheet of ctx.doc.sheetsByIndex) {
+    // Skip the first sheet as it's the dashboard
+    for (const sheet of ctx.doc.sheetsByIndex.slice(1)) {
       try {
         const rows = await sheet.getRows();
         const data = processSheetData(rows.map((row) => row.toObject()));
 
         if (data.length > 0) {
           const latestData = data[data.length - 1]!;
-          const url = (rows[0]?.get("URL") as string) || sheet.title;
+          const url = (rows[0]?.get("Website") as string) || sheet.title;
 
           results.push({
             url,
@@ -112,17 +204,31 @@ export const metricsRouter = createTRPCRouter({
             data,
             latestMetrics: {
               url,
-              timestamp: new Date(latestData.date).toISOString(),
-              performance: latestData.performance,
-              accessibility: latestData.accessibility,
-              bestPractices: latestData.bestPractices,
-              seo: latestData.seo,
-              firstContentfulPaint: latestData.fcp,
-              largestContentfulPaint: latestData.lcp,
-              firstInputDelay: latestData.fid,
-              cumulativeLayoutShift: latestData.cls,
-              speedIndex: latestData.speedIndex,
-              totalBlockingTime: latestData.tbt,
+              timestamp: parseSheetTimestamp(
+                rows[0]?.get("Date") as string | undefined,
+              ),
+              desktop: {
+                performance: latestData.desktopPerformance,
+                accessibility: latestData.desktopAccessibility,
+                bestPractices: latestData.desktopBestPractices,
+                seo: latestData.desktopSeo,
+                fcp: latestData.desktopFcp,
+                lcp: latestData.desktopLcp,
+                tbt: latestData.desktopTbt,
+                cls: latestData.desktopCls,
+                speedIndex: latestData.desktopSpeedIndex,
+              },
+              mobile: {
+                performance: latestData.mobilePerformance,
+                accessibility: latestData.mobileAccessibility,
+                bestPractices: latestData.mobileBestPractices,
+                seo: latestData.mobileSeo,
+                fcp: latestData.mobileFcp,
+                lcp: latestData.mobileLcp,
+                tbt: latestData.mobileTbt,
+                cls: latestData.mobileCls,
+                speedIndex: latestData.mobileSpeedIndex,
+              },
             },
           });
         }
