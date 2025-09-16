@@ -33,7 +33,13 @@ function getTabDisplayName(url: string): string {
     return lastSegment
       .replace(/-/g, " ")
       .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => {
+        // Special case for AMLI - always uppercase
+        if (word.toLowerCase() === "amli") {
+          return "AMLI";
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
       .join(" ");
   } catch {
     // If URL parsing fails, extract from the raw string
@@ -46,7 +52,13 @@ function getTabDisplayName(url: string): string {
     return lastPart
       .replace(/-/g, " ")
       .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => {
+        // Special case for AMLI - always uppercase
+        if (word.toLowerCase() === "amli") {
+          return "AMLI";
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
       .join(" ");
   }
 }
