@@ -26,7 +26,7 @@ export function MetricsDashboard({ selectedSheetData }: MetricsDashboardProps) {
   });
 
   const [dateRange] = useQueryState("range", {
-    defaultValue: "90d" as DateRange,
+    defaultValue: "all" as DateRange,
     shallow: false,
   });
 

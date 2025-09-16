@@ -11,6 +11,7 @@ import {
 } from "~/components/ui/select";
 
 const DATE_RANGES = [
+  { value: "all", label: "All time" },
   { value: "90d", label: "Last 3 months" },
   { value: "30d", label: "Last 30 days" },
   { value: "7d", label: "Last 7 days" },
@@ -20,7 +21,7 @@ export type DateRange = (typeof DATE_RANGES)[number]["value"];
 
 export function DateRangeSelector() {
   const [dateRange, setDateRange] = useQueryState("range", {
-    defaultValue: "90d" as DateRange,
+    defaultValue: "all" as DateRange,
     shallow: false,
   });
 
@@ -50,6 +51,11 @@ export function filterDataByDateRange<T extends { date: string }>(
   dateRange: DateRange,
 ): T[] {
   if (data.length === 0) return data;
+
+  // If "all" time is selected, return all data
+  if (dateRange === "all") {
+    return data;
+  }
 
   // Get the most recent date from the data
   const dates = data
